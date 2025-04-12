@@ -1,0 +1,30 @@
+services:
+  # Backend service
+  - type: web
+    name: rl-project-backend
+    env: docker
+    repo: https://github.com/gordonkoehn/whiteRabbit.git # Replace with your actual GitHub username
+    region: frankfurt
+    plan: free
+    branch: main
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: VENICE_API_KEY
+        sync: false # This requires manual setting in Render dashboard
+    dockerCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  # Frontend service
+  - type: web
+    name: rl-project-frontend
+    env: docker
+    repo: https://github.com/gordonkoehn/whiteRabbit.git # Replace with your actual GitHub username
+    region: frankfurt
+    plan: free
+    branch: main
+    dockerfilePath: ./frontend/Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: BACKEND_URL
+        value: https://rl-project-backend.onrender.com # This URL will be your Render backend URL
+    dockerCommand: streamlit run app/main.py --server.port 8501 --server.address 0.0.0.0

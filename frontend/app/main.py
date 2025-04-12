@@ -1,6 +1,10 @@
 import streamlit as st
 import requests
 import json
+import os
+
+# Get backend URL from environment variable, default to development URL
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://backend:8000")
 
 st.title("RL Project with Venice AI")
 
@@ -10,7 +14,7 @@ if st.button("Predict Action"):
     try:
         state_list = json.loads(state)
         # Send the state as a JSON string rather than a list to avoid it being split into multiple parameters
-        response = requests.get("http://backend:8000/predict/", params={"state": json.dumps(state_list)})
+        response = requests.get(f"{BACKEND_URL}/predict/", params={"state": json.dumps(state_list)})
         st.write(f"Predicted Action: {response.json()['action']}")
     except Exception as e:
         st.error(f"Error: {e}")
@@ -18,5 +22,5 @@ if st.button("Predict Action"):
 st.header("Venice AI Query")
 prompt = st.text_area("Enter prompt for Venice AI", "Explain RL in simple terms")
 if st.button("Query Venice AI"):
-    response = requests.post("http://backend:8000/venice/", json={"prompt": prompt})
+    response = requests.post(f"{BACKEND_URL}/venice/", json={"prompt": prompt})
     st.write(response.json()["result"])
