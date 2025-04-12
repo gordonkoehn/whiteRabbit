@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from .rl_model import train_rl_model, load_rl_model, predict
 from .venice_ai import get_venice_response
 import json
-from typing import Optional
+from typing import Optional, Dict, Any
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -18,7 +19,10 @@ async def get_prediction(state: str):
     action = predict(model, state_list)
     return {"action": int(action)}
 
+class VenicePrompt(BaseModel):
+    prompt: str
+
 @app.post("/venice/")
-async def query_venice(prompt: str):
-    result = get_venice_response(prompt)
-    return {"result": result}
+async def query_venice(request: VenicePrompt):
+    result = get_venice_response(request.prompt)
+    return result

@@ -22,5 +22,14 @@ if st.button("Predict Action"):
 st.header("Venice AI Query")
 prompt = st.text_area("Enter prompt for Venice AI", "Explain RL in simple terms")
 if st.button("Query Venice AI"):
-    response = requests.post(f"{BACKEND_URL}/venice/", json={"prompt": prompt})
-    st.write(response.json()["result"])
+    try:
+        response = requests.post(f"{BACKEND_URL}/venice/", json={"prompt": prompt})
+        response_data = response.json()
+        # Handle the response safely, checking if 'result' key exists
+        if "result" in response_data:
+            st.write(response_data["result"])
+        else:
+            # Display the entire response if the 'result' key is missing
+            st.write("Response from Venice AI:", response_data)
+    except Exception as e:
+        st.error(f"Error querying Venice AI: {e}")

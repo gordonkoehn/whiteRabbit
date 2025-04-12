@@ -5,8 +5,8 @@ services:
     image: ${BACKEND_IMAGE:-whiterabbit-backend:latest}
     ports:
       - "8000:8000"
-    environment:
-      - VENICE_API_KEY=${VENICE_API_KEY}
+    env_file:
+      - .env
     volumes:
       - model-data:/app/model
       - ./backend/pretrained:/app/pretrained
@@ -18,6 +18,8 @@ services:
     image: ${FRONTEND_IMAGE:-whiterabbit-frontend:latest}
     ports:
       - "8501:8501"
+    env_file:
+      - .env
     environment:
       - BACKEND_URL=http://backend:8000
     depends_on:
