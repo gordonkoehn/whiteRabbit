@@ -21,4 +21,4 @@ def load_rl_model():
 
 def predict(model, state):
     action, _ = model.predict(state)
-    return action
+    return int(action)

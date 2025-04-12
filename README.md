@@ -1,6 +1,6 @@
 # Reinforcement Learning Project with Streamlit and Venice AI
 
-This project is a Python-based reinforcement learning (RL) application featuring a FastAPI backend, a Streamlit frontend, and integration with a hypothetical Venice AI API. It uses a CartPole environment from Gymnasium, trained with Stable-Baselines3's PPO algorithm, to demonstrate RL predictions. The Streamlit frontend allows users to input states for RL predictions and query Venice AI for text responses. The project is containerized with Docker Compose and deployed to Render via a GitHub Actions CI/CD pipeline.
+This project is a Python-based reinforcement learning (RL) application featuring a FastAPI backend, a Streamlit frontend, and integration with a hypothetical Venice AI API. It uses a CartPole environment from Gymnasium, trained with Stable-Baselines3's PPO algorithm, to demonstrate RL predictions. The Streamlit frontend allows users to input states for RL predictions and query Venice AI for text responses. The project is containerized with Docker Compose for easy local deployment.
 
 ## Table of Contents
 - [Project Overview](#project-overview)
@@ -10,7 +10,6 @@ This project is a Python-based reinforcement learning (RL) application featuring
 - [Usage](#usage)
 - [Development](#development)
 - [Running Tests](#running-tests)
-- [Deployment](#deployment)
 - [License](#license)
 
 ## Project Overview
@@ -25,8 +24,7 @@ The project consists of:
 - **Infrastructure**:
   - Docker Compose for running backend and frontend containers.
   - A persistent Docker volume to store the trained RL model.
-  - GitHub Actions for CI/CD, deploying to Render.
-- **Tech Stack**: Python 3.10, FastAPI, Streamlit, Stable-Baselines3, Gymnasium, Docker, Render, GitHub Actions.
+- **Tech Stack**: Python 3.10, FastAPI, Streamlit, Stable-Baselines3, Gymnasium, Docker.
 
 The RL model is trained on startup if no saved model exists, ensuring robustness. The project is designed for collaboration, with GitHub for version control and VS Code as the recommended IDE.
 
@@ -35,7 +33,6 @@ The RL model is trained on startup if no saved model exists, ensuring robustness
 - Predict actions for CartPole states using a trained PPO model.
 - Query a hypothetical Venice AI API for text responses.
 - Interactive Streamlit dashboard for RL and AI interactions.
-- Automated testing and deployment to Render.
 - Persistent model storage via Docker volume.
 
 ## Prerequisites
@@ -44,9 +41,6 @@ Before setting up the project, ensure you have:
 - **Python 3.10**: Installed locally (use `pyenv` to manage versions).
 - **Docker Desktop**: Installed and running for containerization.
 - **Git**: Installed for cloning the repository.
-- **GitHub Account**: For collaboration and CI/CD.
-- **Docker Hub Account**: For pushing Docker images.
-- **Render Account**: For deployment.
 - **VS Code**: Recommended IDE with extensions:
   - Python (Microsoft)
   - Docker (Microsoft)
@@ -165,9 +159,6 @@ rl-project/
 │   │   ├── main.py          # Streamlit app
 │   ├── Dockerfile
 │   ├── requirements.txt
-├── .github/
-│   ├── workflows/
-│   │   ├── ci-cd.yml        # GitHub Actions pipeline
 ├── docker-compose.yml
 ├── .env
 ├── .gitignore
@@ -179,17 +170,6 @@ rl-project/
 - Create a new branch (e.g., feature/add-visualization).
 - Make changes (e.g., edit frontend/app/main.py to add plots).
 - Stage (+ icon), commit (Ctrl+Enter), and push (… > Push).
-
-### Collaborate via GitHub:
-- Push your branch:
-  ```bash
-  git push origin feature/add-visualization
-  ```
-- Open a pull request (PR) on GitHub:
-  - Go to your repo > Pull requests > New pull request.
-  - Select feature/add-visualization to main.
-  - Assign your collaborator for review.
-  - Merge after approval.
 
 ## Running Tests
 
@@ -203,17 +183,24 @@ pip install -r requirements.txt
 Ensures pytest is installed.
 
 ### Run Tests:
-In the project root:
+To run tests correctly, you need to run them from the backend directory:
 ```bash
 cd backend
 pytest tests/
 ```
-Tests in backend/tests/test_rl_model.py verify model predictions.
+
+Or from the project root, specify the Python path:
+```bash
+PYTHONPATH=$PYTHONPATH:$(pwd)/backend pytest backend/tests/
+```
 
 ### Add New Tests:
 Create new test files in backend/tests/ (e.g., test_venice_ai.py).
 Example test:
 ```python
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.rl_model import load_rl_model, predict
 
 def test_predict_valid_action():
@@ -222,39 +209,6 @@ def test_predict_valid_action():
     action = predict(model, state)
     assert action in [0, 1]
 ```
-Run `pytest tests/` to verify.
-
-### CI Testing:
-- Tests run automatically on every push/PR via GitHub Actions (see .github/workflows/ci-cd.yml).
-- Check results in GitHub > Actions tab.
-
-## Deployment
-
-The project is deployed to Render using a GitHub Actions CI/CD pipeline.
-
-### Render Services:
-- Backend: rl-project-backend (FastAPI, Docker, port 8000).
-- Frontend: rl-project-frontend (Streamlit, Docker, port 8501).
-- URLs: Provided in Render dashboard (e.g., https://rl-project-backend.onrender.com).
-
-### CI/CD Pipeline:
-- Defined in .github/workflows/ci-cd.yml.
-- On push to main:
-  - Runs tests (pytest backend/tests/).
-  - Builds and pushes Docker images to Docker Hub.
-  - Deploys to Render using API calls.
-- Secrets required (set in GitHub > Settings > Secrets and variables > Actions):
-  - DOCKER_USERNAME, DOCKER_PASSWORD
-  - RENDER_API_KEY, RENDER_BACKEND_SERVICE_ID, RENDER_FRONTEND_SERVICE_ID
-
-### Manual Deployment Check:
-- After pushing to main, monitor GitHub Actions.
-- Verify deployment in Render dashboard > Logs.
-- Access deployed apps at Render URLs.
-
-### Notes:
-- Render's free tier has limited uptime; consider a paid tier for persistence.
-- The model-data volume persists the RL model locally but not on Render's free tier.
 
 ## License
 
