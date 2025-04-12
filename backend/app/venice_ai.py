@@ -8,7 +8,6 @@ VENICE_API_URL = "https://api.venice.ai/api/v1/chat/completions"
 
 # Debug output to check if the environment variable is loaded
 print(f"DEBUG: VENICE_API_KEY is {'set' if VENICE_API_KEY else 'not set'}")
-print(f"DEBUG: VENICE_API_KEY exact value: '{VENICE_API_KEY}'")
 if VENICE_API_KEY:
     print(f"DEBUG: VENICE_API_KEY value starts with: {VENICE_API_KEY[:4]}{'*' * (len(VENICE_API_KEY) - 4)}")
 else:
