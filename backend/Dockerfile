@@ -36,4 +36,5 @@ RUN mkdir -p /app/model
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use $PORT if available, default to 8000
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
