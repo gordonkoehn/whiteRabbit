@@ -12,6 +12,10 @@ async def startup_event():
     global model
     model = load_rl_model() or train_rl_model()
 
+@app.get("/")
+async def read_root():
+    return {"status": "ok"}
+
 @app.get("/predict/")
 async def get_prediction(state: str):
     # Parse the JSON-serialized state parameter
