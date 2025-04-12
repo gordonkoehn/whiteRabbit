@@ -7,7 +7,7 @@ services:
     environment:
       - VENICE_API_KEY=${VENICE_API_KEY}
     volumes:
-      - ./backend:/app
+      - model-data:/app/model
     networks:
       - app-network
 
@@ -19,11 +19,12 @@ services:
       - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
     networks:
       - app-network
 
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  model-data:
