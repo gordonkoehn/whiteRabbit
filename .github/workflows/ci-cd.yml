@@ -12,36 +12,69 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      # Free up disk space
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af
+          df -h
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
           
-      - name: Install backend dependencies
+      - name: Install backend dependencies for testing only
         run: |
+          pip install pytest
           pip install -r backend/requirements.txt
           
       - name: Run backend tests
         run: |
           cd backend
           python -m pytest tests/
-          
-      - name: Install frontend dependencies
-        run: |
-          pip install -r frontend/requirements.txt
       
-      # Set up Docker Compose
+      # Set up Docker Buildx with larger cache
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-flags: --debug
       
-      # Use Docker Compose with the modern CLI syntax
-      - name: Build Docker images
-        run: |
-          docker compose build
+      # Build backend with specific platform to reduce size
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          load: true
+          tags: whiterabbit-backend:latest
+          platforms: linux/amd64
+          cache-from: type=gha,scope=backend-cache
+          cache-to: type=gha,scope=backend-cache,mode=max
+      
+      # Build frontend with specific platform
+      - name: Build frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          load: true
+          tags: whiterabbit-frontend:latest
+          platforms: linux/amd64
+          cache-from: type=gha,scope=frontend-cache
+          cache-to: type=gha,scope=frontend-cache,mode=max
           
-      # Test that Docker containers can start
-      - name: Test Docker containers
+      # Test containers with docker compose
+      - name: Test containers with docker compose
         run: |
+          docker images
+          echo "BACKEND_IMAGE=whiterabbit-backend:latest" > .env
+          echo "FRONTEND_IMAGE=whiterabbit-frontend:latest" >> .env
           docker compose up -d
           sleep 10  # Give containers time to start
           docker compose ps
