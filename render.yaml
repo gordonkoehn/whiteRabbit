@@ -9,7 +9,7 @@ services:
     branch: main
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend  # Added this line to set context to the backend directory
-    healthCheckPath: / # Use the /docs endpoint for health checks
+    healthCheckPath: /docs # Updated health check endpoint
     envVars:
       - key: VENICE_API_KEY
         sync: false # This requires manual setting in Render dashboard
