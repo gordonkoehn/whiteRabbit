@@ -9,6 +9,7 @@ services:
       - VENICE_API_KEY=${VENICE_API_KEY}
     volumes:
       - model-data:/app/model
+      - ./backend/pretrained:/app/pretrained
     networks:
       - app-network
 
