@@ -10,6 +10,7 @@ This project is a Python-based reinforcement learning (RL) application featuring
 - [Usage](#usage)
 - [Development](#development)
 - [Running Tests](#running-tests)
+- [Local Model Training and Deployment](#local-model-training-and-deployment)
 - [License](#license)
 
 ## Project Overview
@@ -150,10 +151,13 @@ rl-project/
 │   │   ├── main.py          # FastAPI app
 │   │   ├── rl_model.py      # RL model logic
 │   │   ├── venice_ai.py     # Venice AI client
+│   ├── pretrained/
+│   │   ├── ppo_cartpole.zip # Pre-trained model for deployment
 │   ├── tests/
 │   │   ├── test_rl_model.py # Unit tests
 │   ├── Dockerfile
 │   ├── requirements.txt
+│   ├── train_local_model.py # Script to train models locally
 ├── frontend/
 │   ├── app/
 │   │   ├── main.py          # Streamlit app
@@ -210,6 +214,48 @@ def test_predict_valid_action():
     assert action in [0, 1]
 ```
 
+## Local Model Training and Deployment
+
+### Training Models Locally
+
+To avoid training models during application startup in production environments (such as Render), you can train models locally and commit them to the repository:
+
+1. **Train a model locally**:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   python train_local_model.py
+   ```
+   This script:
+   - Trains a PPO model on the CartPole-v1 environment
+   - Saves it to the `backend/pretrained/` directory
+   - Tests that the model works correctly
+   
+2. **Commit the trained model**:
+   ```bash
+   git add backend/pretrained/ppo_cartpole.zip
+   git commit -m "Add pre-trained model for deployment"
+   git push
+   ```
+
+3. **Application Behavior**:
+   - The application will automatically use the pre-trained model in the `pretrained/` directory
+   - If no pre-trained model is found, it will fall back to training on startup
+   - The search priority is:
+     1. `pretrained/ppo_cartpole.zip` (pre-committed model)
+     2. `model/ppo_cartpole.zip` (Docker volume)
+     3. `ppo_cartpole.zip` (legacy path)
+
+### Deploying to Render
+
+The Render deployment will use the pre-trained model from the repository instead of training on startup:
+
+1. When deploying to Render, the application will find and use `pretrained/ppo_cartpole.zip`
+2. This eliminates the need for expensive training during deployment
+3. Update the model anytime by training locally and committing the new model file
+
+This approach allows you to control exactly which model version is deployed, ensures consistent model behavior across environments, and significantly reduces deployment startup time.
+
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
@@ -238,7 +284,6 @@ If you see a FileNotFoundError, stop (Ctrl+C), run docker-compose down, and rebu
   - Venice AI prompt may fail without a real key, but the UI should load
 - Open http://localhost:8000/docs (FastAPI)
   - Test /predict/ with state=[0,0,0,0]
-
 
 ### Clean Up:
 Stop containers:
