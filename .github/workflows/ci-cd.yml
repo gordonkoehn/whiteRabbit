@@ -11,19 +11,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+          
       - name: Install backend dependencies
         run: |
           pip install -r backend/requirements.txt
+          
       - name: Run backend tests
         run: |
-          pytest backend/tests/
+          cd backend
+          python -m pytest tests/
+          
       - name: Install frontend dependencies
         run: |
           pip install -r frontend/requirements.txt
+      
+      # Set up Docker Compose
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Use Docker Compose with the modern CLI syntax
       - name: Build Docker images
         run: |
-          docker-compose build
+          docker compose build
+          
+      # Test that Docker containers can start
+      - name: Test Docker containers
+        run: |
+          docker compose up -d
+          sleep 10  # Give containers time to start
+          docker compose ps
+          docker compose down
