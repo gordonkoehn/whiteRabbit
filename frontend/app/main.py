@@ -9,7 +9,8 @@ state = st.text_input("Enter state (e.g., [0.1, 0.2, 0.3, 0.4])", "[0, 0, 0, 0]"
 if st.button("Predict Action"):
     try:
         state_list = json.loads(state)
-        response = requests.get("http://backend:8000/predict/", params={"state": state_list})
+        # Send the state as a JSON string rather than a list to avoid it being split into multiple parameters
+        response = requests.get("http://backend:8000/predict/", params={"state": json.dumps(state_list)})
         st.write(f"Predicted Action: {response.json()['action']}")
     except Exception as e:
         st.error(f"Error: {e}")
