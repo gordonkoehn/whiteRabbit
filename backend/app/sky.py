@@ -33,6 +33,4 @@ def sky(seed: int):
 # TODO: implement a function to give the temperature of the surface
 
 
-# TODO: add a fuciont of civilication death.
-
-
+# TODO: add a function of civilization death.
