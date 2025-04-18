@@ -144,6 +144,40 @@ class SolarSystem:
 
 ### Example usage
 
+def get_orbital_frame(frame: int = 0, total_frames: int = 2000):
+    """
+    Returns the positions of the three suns and the planet for a given frame.
+    Args:
+        frame: The frame index (0-based)
+        total_frames: Total number of frames to simulate
+    Returns:
+        dict with positions of sun1, sun2, sun3, and planet
+    """
+    m_sun = 1.989e30
+    m_earth = 15.972e29
+    AU = 1.496e11
+    sun1 = Sun("Sun1", m_sun, [0.0, 1.5*AU], [0.0, 0.0], orbit=Orbit([0.0, 2*AU], [0.0, 0.0]))
+    sun2 = Sun("Sun2", m_sun, [1.5*AU, -1.5*AU], [0.0, 15000.0], orbit=Orbit([1.5*AU, -1.5*AU], [0.0, 15000.0]))
+    sun3 = Sun("Sun3", m_sun, [-1.5*AU, -1.5*AU], [0.0, -15000.0], orbit=Orbit([-1.5*AU, -1.5*AU], [0.0, -15000.0]))
+    planet = Planet("Planet", m_earth, [0, 0.0], [20000, 20000.0])
+    solar_system = SolarSystem([sun1, sun2, sun3], planet)
+    t_span = (0, 9.154e7)
+    t_eval = np.linspace(t_span[0], t_span[1], total_frames)
+    sol = solar_system.integrate(t_span, t_eval)
+    x1_sol, y1_sol = sol.y[0], sol.y[1]
+    x2_sol, y2_sol = sol.y[2], sol.y[3]
+    x3_sol, y3_sol = sol.y[4], sol.y[5]
+    xp_sol, yp_sol = sol.y[6], sol.y[7]
+    # Clamp frame to valid range
+    idx = max(0, min(frame, total_frames-1))
+    return {
+        "frame": idx,
+        "sun1": {"x": float(x1_sol[idx]), "y": float(y1_sol[idx])},
+        "sun2": {"x": float(x2_sol[idx]), "y": float(y2_sol[idx])},
+        "sun3": {"x": float(x3_sol[idx]), "y": float(y3_sol[idx])},
+        "planet": {"x": float(xp_sol[idx]), "y": float(yp_sol[idx])}
+    }
+
 def main():
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
