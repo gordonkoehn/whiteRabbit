@@ -85,14 +85,14 @@ class SolarSystem:
 
 def main():
     import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
     m_sun = 1.989e30
     m_earth = 5.972e24
     AU = 1.496e11
-    # More long-lived initial positions and velocities for three suns
     sun1 = Sun("Sun1", m_sun, [0.0, 2*AU], [0.0, 0.0])
     sun2 = Sun("Sun2", m_sun, [1.5*AU, -1.5*AU], [0.0, 15000.0])
     sun3 = Sun("Sun3", m_sun, [-1.5*AU, -1.5*AU], [0.0, -15000.0])
-    planet = CelestialBody("Planet", m_earth, [3*AU, 0.0], [0.0, 20000.0])
+    planet = CelestialBody("Planet", m_earth, [0, 0.0], [0.0, 20000.0])
 
     solar_system = SolarSystem([sun1, sun2, sun3], planet)
     t_span = (0, 3.154e7)
@@ -102,21 +102,49 @@ def main():
     x2_sol, y2_sol = sol.y[2], sol.y[3]
     x3_sol, y3_sol = sol.y[4], sol.y[5]
     xp_sol, yp_sol = sol.y[6], sol.y[7]
-    plt.figure(figsize=(8,8))
-    plt.plot(x1_sol, y1_sol, 'y', label='Sun1')
-    plt.plot(x2_sol, y2_sol, 'b', label='Sun2')
-    plt.plot(x3_sol, y3_sol, 'r', label='Sun3')
-    plt.plot(xp_sol, yp_sol, 'g', label='Planet')
-    plt.scatter(x1_sol[0], y1_sol[0], color='y', marker='o')
-    plt.scatter(x2_sol[0], y2_sol[0], color='b', marker='o')
-    plt.scatter(x3_sol[0], y3_sol[0], color='r', marker='o')
-    plt.scatter(xp_sol[0], yp_sol[0], color='g', marker='o')
-    plt.xlabel('x [m]')
-    plt.ylabel('y [m]')
-    plt.title('Three Suns + Planet (Gravitational)')
-    plt.legend()
-    plt.grid(True)
-    plt.axis('equal')
+
+    fig, ax = plt.subplots(figsize=(8,8))
+    ax.set_xlabel('x [m]')
+    ax.set_ylabel('y [m]')
+    ax.set_title('Three Suns + Planet (Gravitational)')
+    ax.grid(True)
+    ax.axis('equal')
+    ax.set_xlim(np.min([x1_sol, x2_sol, x3_sol, xp_sol]), np.max([x1_sol, x2_sol, x3_sol, xp_sol]))
+    ax.set_ylim(np.min([y1_sol, y2_sol, y3_sol, yp_sol]), np.max([y1_sol, y2_sol, y3_sol, yp_sol]))
+
+    sun1_line, = ax.plot([], [], 'y-', label='Sun1')
+    sun2_line, = ax.plot([], [], 'b-', label='Sun2')
+    sun3_line, = ax.plot([], [], 'r-', label='Sun3')
+    planet_line, = ax.plot([], [], 'g-', label='Planet')
+    sun1_dot, = ax.plot([], [], 'yo')
+    sun2_dot, = ax.plot([], [], 'bo')
+    sun3_dot, = ax.plot([], [], 'ro')
+    planet_dot, = ax.plot([], [], 'go')
+    ax.legend()
+
+    def init():
+        sun1_line.set_data([], [])
+        sun2_line.set_data([], [])
+        sun3_line.set_data([], [])
+        planet_line.set_data([], [])
+        sun1_dot.set_data([], [])
+        sun2_dot.set_data([], [])
+        sun3_dot.set_data([], [])
+        planet_dot.set_data([], [])
+        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot
+
+    def update(frame):
+        sun1_line.set_data(x1_sol[:frame], y1_sol[:frame])
+        sun2_line.set_data(x2_sol[:frame], y2_sol[:frame])
+        sun3_line.set_data(x3_sol[:frame], y3_sol[:frame])
+        planet_line.set_data(xp_sol[:frame], yp_sol[:frame])
+        sun1_dot.set_data([x1_sol[frame-1]], [y1_sol[frame-1]])
+        sun2_dot.set_data([x2_sol[frame-1]], [y2_sol[frame-1]])
+        sun3_dot.set_data([x3_sol[frame-1]], [y3_sol[frame-1]])
+        planet_dot.set_data([xp_sol[frame-1]], [yp_sol[frame-1]])
+        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot
+
+    ani = FuncAnimation(fig, update, frames=len(t_eval), init_func=init, blit=True, interval=20, repeat=False)
     plt.show()
 
 if __name__ == "__main__":
