@@ -17,6 +17,6 @@ def train_model(env_name: str, model_path: str = "models/ppo_model"):
     print(f"Model saved at {model_path}")
 
 if __name__ == "__main__":
-    ENV_NAME = "CartPole-v1"  # Replace with your custom environment name
+    ENV_NAME = "ThreeBodyEnv-v0"  # Our custom Gym environment
     MODEL_PATH = "models/ppo_cartpole"
     train_model(ENV_NAME, MODEL_PATH)
