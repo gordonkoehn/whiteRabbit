@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from backend.app.orbital_objects import CelestialBody, Sun, SolarSystem, Orbit
+from app.orbital_objects import CelestialBody, Sun, SolarSystem, Orbit
 
 def test_solar_system_three_suns():
     # Define three suns with different positions and velocities

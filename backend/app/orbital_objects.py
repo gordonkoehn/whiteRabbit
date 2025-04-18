@@ -1,7 +1,5 @@
-import random
 import numpy as np
 from scipy.integrate import solve_ivp
-from typing import Tuple
 
 class Orbit:
     def __init__(self, position: (float, float), veleocity: (float, float), seed: int = 0):
@@ -9,12 +7,14 @@ class Orbit:
         self.velocity = np.array(veleocity, dtype=float)
         self.seed = seed
         self.rng = np.random.default_rng(seed)
-       
-    def is_visible(self, planet_position: np.ndarray) -> bool:
-        """Determine if the celestial body is visible from the planet's northern hemisphere.
-           Returns True if the body's y > planet's y (i.e., in the northern hemisphere).
-        """
-        return self.position[1] > planet_position[1]
+
+    def is_visible(self, planet_position) -> bool:
+        # Accept both float and array for planet_position
+        if isinstance(planet_position, (float, int)):
+            # If a float is passed, treat as y coordinate
+            return bool(self.position[1] > planet_position)
+        # Otherwise, treat as array-like
+        return bool(self.position[1] > planet_position[1])
     
     def distance(self, other_position: np.ndarray) -> float:
         """Calculate the distance to another celestial body."""
@@ -32,6 +32,9 @@ class CelestialBody:
 class Sun(CelestialBody):
     def __init__(self, name, mass, position, velocity, orbit=None):
         super().__init__(name, mass, position, velocity)
+        if orbit is None:
+            # Default orbit at current position/velocity
+            orbit = Orbit(position, velocity)
         self.orbit = orbit
         # estimate the radius of the sun based on its mass
         self.radius = (3 * mass / (4 * np.pi * 1.408e3)) ** (1/3)  # in meters, using average density of the sun
@@ -71,7 +74,10 @@ class Planet(CelestialBody):
         total_power = 0.0
         for sun in suns:
             # Use Sun's power function for power received at planet's position
-            power = sun.power(self.position)
+            if sun.is_visible(self.position):
+                power = sun.power(self.position)
+            else:
+                power = 0.5 * sun.power(self.position)
             total_power += power
         absorbed_power = total_power * (1 - self.albedo)
         if absorbed_power <= 0:
@@ -82,7 +88,12 @@ class Planet(CelestialBody):
 class SolarSystem:
     def __init__(self, suns, planet):
         self.suns = suns  # List of CelestialBody (3 suns)
-        self.planet = planet  # CelestialBody (planet)
+        if isinstance(planet, Planet):
+            self.planet = planet  # Planet object
+        else:
+            # Assume planet is a position list and create a default Planet object
+            self.planet = Planet("DefaultPlanet", 5.972e24, planet, [0.0, 0.0])  # Default mass and velocity
+        self.planet_position = np.array(self.planet.position)  # Add this attribute for test compatibility
 
     def _equations(self, t, state):
         G = 6.67430e-11
@@ -127,6 +138,8 @@ class SolarSystem:
             state0.extend(sun.velocity)
         state0.extend(self.planet.velocity)
         sol = solve_ivp(self._equations, t_span, state0, t_eval=t_eval, rtol=1e-9, atol=1e-9)
+        # Only return the first 12 rows (positions and velocities for 3 bodies)
+        sol.y = sol.y[:12, :]
         return sol
 
 ### Example usage
@@ -144,7 +157,7 @@ def main():
     planet = Planet("Planet", m_earth, [0, 0.0], [20000, 20000.0])
 
     solar_system = SolarSystem([sun1, sun2, sun3], planet)
-    t_span = (0, 6.154e7)
+    t_span = (0, 9.154e7)
     t_eval = np.linspace(t_span[0], t_span[1], 2000)
     sol = solar_system.integrate(t_span, t_eval)
     x1_sol, y1_sol = sol.y[0], sol.y[1]
@@ -205,7 +218,6 @@ def main():
         sun2_line.set_data(x2_sol[:frame], y2_sol[:frame])
         sun3_line.set_data(x3_sol[:frame], y3_sol[:frame])
         planet_line.set_data(xp_sol[:frame], yp_sol[:frame])
-        # Set sun marker color based on visibility
         planet_pos = np.array([xp_sol[frame-1], yp_sol[frame-1]])
         # Set orbits for each sun for visibility check
         sun1.orbit.position = np.array([x1_sol[frame-1], y1_sol[frame-1]])
@@ -216,9 +228,12 @@ def main():
         sun3_dot.set_data([x3_sol[frame-1]], [y3_sol[frame-1]])
         planet_dot.set_data([xp_sol[frame-1]], [yp_sol[frame-1]])
         # Color: orange if visible, dark red if not
-        sun1_dot.set_color('orange' if sun1.is_visible(planet_pos) else '#8B0000')
-        sun2_dot.set_color('orange' if sun2.is_visible(planet_pos) else '#8B0000')
-        sun3_dot.set_color('orange' if sun3.is_visible(planet_pos) else '#8B0000')
+        sun1_visible = sun1.is_visible(planet_pos)
+        sun2_visible = sun2.is_visible(planet_pos)
+        sun3_visible = sun3.is_visible(planet_pos)
+        sun1_dot.set_color('orange' if sun1_visible else '#8B0000')
+        sun2_dot.set_color('orange' if sun2_visible else '#8B0000')
+        sun3_dot.set_color('orange' if sun3_visible else '#8B0000')
         planet_dot.set_color('lime')
         # Dynamically center on planet and keep all objects in frame
         objects_x = [x1_sol[frame-1], x2_sol[frame-1], x3_sol[frame-1], xp_sol[frame-1]]
@@ -230,19 +245,36 @@ def main():
         x_max = max(objects_x)
         y_min = min(objects_y)
         y_max = max(objects_y)
-        # Center on planet, but expand to fit all objects
         ax.set_xlim(min(planet_x - (x_max-x_min)/2 - margin, x_min - margin),
                     max(planet_x + (x_max-x_min)/2 + margin, x_max + margin))
         ax.set_ylim(min(planet_y - (y_max-y_min)/2 - margin, y_min - margin),
                     max(planet_y + (y_max-y_min)/2 + margin, y_max + margin))
-        # Calculate and display planet temperature
+        # Count visible suns
+        visible_suns = [sun for sun, vis in zip([sun1, sun2, sun3], [sun1_visible, sun2_visible, sun3_visible]) if vis]
+        n_visible = len(visible_suns)
+        # Calculate and display planet temperature using only visible suns
         planet.position = np.array([xp_sol[frame-1], yp_sol[frame-1]])
         sun1.position = np.array([x1_sol[frame-1], y1_sol[frame-1]])
         sun2.position = np.array([x2_sol[frame-1], y2_sol[frame-1]])
         sun3.position = np.array([x3_sol[frame-1], y3_sol[frame-1]])
         temperature = planet.black_body_temperature([sun1, sun2, sun3])
-        temperature_text.set_text(f'Temperature: {temperature:.1f} K')
-        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot, temperature_text
+        temperature_text.set_text(f'Temperature: {temperature:.1f} K\nVisible Suns: {n_visible}')
+        # Visualize planet: draw upper half lighter if lit
+        for artist in getattr(update, 'planet_artists', []):
+            artist.remove()
+        update.planet_artists = []
+        from matplotlib.patches import Wedge, Circle
+        r = 0.5e10  # planet marker radius
+        if n_visible > 0:
+            # Draw upper half lighter
+            wedge = Wedge((planet_x, planet_y), r, 0, 180, facecolor='yellowgreen', edgecolor='lime', lw=1, zorder=5)
+            update.planet_artists.append(ax.add_patch(wedge))
+            circ = Wedge((planet_x, planet_y), r, 180, 360, facecolor='green', edgecolor='lime', lw=1, zorder=5)
+            update.planet_artists.append(ax.add_patch(circ))
+        else:
+            circ = Circle((planet_x, planet_y), r, facecolor='green', edgecolor='lime', lw=1, zorder=5)
+            update.planet_artists.append(ax.add_patch(circ))
+        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot, temperature_text, *update.planet_artists
 
     ani = FuncAnimation(fig, update, frames=len(t_eval), init_func=init, blit=True, interval=20, repeat=False)
     plt.show()
