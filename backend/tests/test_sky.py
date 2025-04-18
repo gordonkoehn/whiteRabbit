@@ -1,5 +1,5 @@
 import pytest
-from backend.app.sky import sky
+from app.sky import sky
 
 def test_sky_example():
     seed = 42
