@@ -9,7 +9,6 @@ class Orbit:
 
     def is_visible(self, time: float) -> bool:
         # For now, random visibility based on time and seed
-        self.rng.seed(self.seed + int(time))
         return self.rng.choice([True, False])
 
 class Sun:
