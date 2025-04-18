@@ -4,6 +4,7 @@ import os
 import warnings
 from typing import Callable
 import numpy as np
+from .sky import sky  # Import the curried sky function
 
 MODEL_PATHS = [
     "ppo_cartpole",           # Current path (for backward compatibility)
