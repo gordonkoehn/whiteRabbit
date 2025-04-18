@@ -3,8 +3,7 @@ import streamlit as st
 st.title("Three Body AI")
 
 st.write("""
-         We solve the three-body proble of the popular Chinese sci-fi novel "The Three-Body Problem" by Liu Cixin.
-         The novel is about the first contact between humanity and an alien civilization from the Trisolaris system.
+         We solve the three-body problem of the popular Chinese sci-fi novel "The Three-Body Problem" by Liu Cixin.
          The story is set against the backdrop of the Cultural Revolution in China and explores themes of science, philosophy, and the nature of humanity.
 
          We use reinforcement learning (RL) to predict the trajectory of the three-body problem.
