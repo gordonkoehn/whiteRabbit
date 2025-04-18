@@ -11,20 +11,26 @@ def sky(seed: int):
     Returns a function that, given a time, returns a tuple of booleans indicating
     whether suns A, B, and C are visible at that time.
     """
-    # Initialize orbits and suns with the seed
-    orbit_a = Orbit('A', seed + 1)
-    orbit_b = Orbit('B', seed + 2)
-    orbit_c = Orbit('C', seed + 3)
-    sun_a = Sun('A', orbit_a)
-    sun_b = Sun('B', orbit_b)
-    sun_c = Sun('C', orbit_c)
+    # Use numeric positions/velocities for Orbit
+    orbit_a = Orbit([0.0, 1.0], [0.0, 0.0], seed + 1)
+    orbit_b = Orbit([1.0, 0.0], [0.0, 0.0], seed + 2)
+    orbit_c = Orbit([0.0, -1.0], [0.0, 0.0], seed + 3)
+    sun_a = Sun('A', 1.0, [0.0, 1.0], [0.0, 0.0], orbit=orbit_a)
+    sun_b = Sun('B', 1.0, [1.0, 0.0], [0.0, 0.0], orbit=orbit_b)
+    sun_c = Sun('C', 1.0, [0.0, -1.0], [0.0, 0.0], orbit=orbit_c)
 
-    def at_time(time: float) -> Tuple[bool, bool, bool]:
+    def at_time(time: float):
+        # For demonstration, planet at (0,0)
+        planet_pos = [0.0, 0.0]
         return (
-            sun_a.is_visible(time),
-            sun_b.is_visible(time),
-            sun_c.is_visible(time)
+            sun_a.is_visible(planet_pos),
+            sun_b.is_visible(planet_pos),
+            sun_c.is_visible(planet_pos)
         )
     return at_time
 
 
+# TODO: implement a function to give the temperature of the surface
+
+
+# TODO: add a function of civilization death.
