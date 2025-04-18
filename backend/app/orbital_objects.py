@@ -91,16 +91,16 @@ def main():
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
     m_sun = 1.989e30
-    m_earth = 5.972e24
+    m_earth = 15.972e29
     AU = 1.496e11
     # Assign an Orbit to each Sun at creation
-    sun1 = Sun("Sun1", m_sun, [0.0, 2*AU], [0.0, 0.0], orbit=Orbit([0.0, 2*AU], [0.0, 0.0]))
+    sun1 = Sun("Sun1", m_sun, [0.0, 1.5*AU], [0.0, 0.0], orbit=Orbit([0.0, 2*AU], [0.0, 0.0]))
     sun2 = Sun("Sun2", m_sun, [1.5*AU, -1.5*AU], [0.0, 15000.0], orbit=Orbit([1.5*AU, -1.5*AU], [0.0, 15000.0]))
     sun3 = Sun("Sun3", m_sun, [-1.5*AU, -1.5*AU], [0.0, -15000.0], orbit=Orbit([-1.5*AU, -1.5*AU], [0.0, -15000.0]))
-    planet = CelestialBody("Planet", m_earth, [0, 0.0], [0.0, 20000.0])
+    planet = CelestialBody("Planet", m_earth, [0, 0.0], [20000, 20000.0])
 
     solar_system = SolarSystem([sun1, sun2, sun3], planet)
-    t_span = (0, 3.154e7)
+    t_span = (0, 6.154e7)
     t_eval = np.linspace(t_span[0], t_span[1], 2000)
     sol = solar_system.integrate(t_span, t_eval)
     x1_sol, y1_sol = sol.y[0], sol.y[1]
