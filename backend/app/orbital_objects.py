@@ -16,6 +16,10 @@ class Orbit:
         """
         return self.position[1] > planet_position[1]
     
+    def distance(self, other_position: np.ndarray) -> float:
+        """Calculate the distance to another celestial body."""
+        return np.linalg.norm(self.position - other_position)
+    
 
 class CelestialBody:
     def __init__(self, name, mass, position, velocity):
@@ -29,11 +33,50 @@ class Sun(CelestialBody):
     def __init__(self, name, mass, position, velocity, orbit=None):
         super().__init__(name, mass, position, velocity)
         self.orbit = orbit
+        # estimate the radius of the sun based on its mass
+        self.radius = (3 * mass / (4 * np.pi * 1.408e3)) ** (1/3)  # in meters, using average density of the sun
+        self.temperature = 5778  # in Kelvin, average surface temperature of the sun
 
     def is_visible(self, planet_position: np.ndarray) -> bool:
         if self.orbit is not None:
             return self.orbit.is_visible(planet_position)
         raise RuntimeError("Sun must have an orbit set to determine visibility.")
+    
+    def distance(self, other_position: np.ndarray) -> float:
+        if self.orbit is not None:
+            return self.orbit.distance(other_position)
+        raise RuntimeError("Sun must have an orbit set to calculate distance.")
+    
+    def power(self, other_position: np.ndarray) -> float:
+        """Calculate the power received from the sun at the given position."""
+        distance = self.distance(other_position)
+        if distance == 0:
+            return float('inf')
+        # Using the inverse square law for power
+        return self.temperature * self.radius**2 / distance**2
+
+class Planet(CelestialBody):
+    def __init__(self, name, mass, position, velocity, albedo=0.3):
+        super().__init__(name, mass, position, velocity)
+        self.albedo = albedo  # reflectivity, default Earth-like
+
+    def black_body_temperature(self, suns):
+        """
+        Calculate the equilibrium temperature of the planet based on black body radiation.
+        suns: list of Sun objects
+        Returns: temperature in Kelvin
+        """
+        sigma = 5.670374419e-8  # W/m^2/K^4
+        total_power = 0.0
+        for sun in suns:
+            # Use Sun's power function for power received at planet's position
+            power = sun.power(self.position)
+            total_power += power
+        absorbed_power = total_power * (1 - self.albedo)
+        if absorbed_power <= 0:
+            return 0.0
+        temperature = (absorbed_power / sigma) ** 0.25
+        return temperature
 
 class SolarSystem:
     def __init__(self, suns, planet):
@@ -97,7 +140,7 @@ def main():
     sun1 = Sun("Sun1", m_sun, [0.0, 1.5*AU], [0.0, 0.0], orbit=Orbit([0.0, 2*AU], [0.0, 0.0]))
     sun2 = Sun("Sun2", m_sun, [1.5*AU, -1.5*AU], [0.0, 15000.0], orbit=Orbit([1.5*AU, -1.5*AU], [0.0, 15000.0]))
     sun3 = Sun("Sun3", m_sun, [-1.5*AU, -1.5*AU], [0.0, -15000.0], orbit=Orbit([-1.5*AU, -1.5*AU], [0.0, -15000.0]))
-    planet = CelestialBody("Planet", m_earth, [0, 0.0], [20000, 20000.0])
+    planet = Planet("Planet", m_earth, [0, 0.0], [20000, 20000.0])
 
     solar_system = SolarSystem([sun1, sun2, sun3], planet)
     t_span = (0, 6.154e7)
