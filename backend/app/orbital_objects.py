@@ -48,15 +48,16 @@ class Sun(CelestialBody):
         raise RuntimeError("Sun must have an orbit set to calculate distance.")
     
     def power(self, other_position: np.ndarray) -> float:
-        """Calculate the power received from the sun at the given position."""
+        """Calculate the power received from the sun at the given position (W/m^2)."""
         distance = self.distance(other_position)
         if distance == 0:
             return float('inf')
-        # Using the inverse square law for power
-        return self.temperature * self.radius**2 / distance**2
+        sigma = 5.670374419e-8  # Stefan-Boltzmann constant
+        luminosity = 4 * np.pi * self.radius**2 * sigma * self.temperature**4
+        return luminosity / (4 * np.pi * distance**2)
 
 class Planet(CelestialBody):
-    def __init__(self, name, mass, position, velocity, albedo=0.3):
+    def __init__(self, name, mass, position, velocity, albedo=0.5):
         super().__init__(name, mass, position, velocity)
         self.albedo = albedo  # reflectivity, default Earth-like
 
@@ -185,6 +186,8 @@ def main():
     ]
     ax.legend(handles=legend_elements, loc='upper right', facecolor='black', edgecolor='white', labelcolor='white')
 
+    temperature_text = ax.text(0.02, 0.95, '', transform=ax.transAxes, color='white', fontsize=12, ha='left', va='top')
+
     def init():
         sun1_line.set_data([], [])
         sun2_line.set_data([], [])
@@ -194,7 +197,8 @@ def main():
         sun2_dot.set_data([], [])
         sun3_dot.set_data([], [])
         planet_dot.set_data([], [])
-        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot
+        temperature_text.set_text('')
+        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot, temperature_text
 
     def update(frame):
         sun1_line.set_data(x1_sol[:frame], y1_sol[:frame])
@@ -231,7 +235,14 @@ def main():
                     max(planet_x + (x_max-x_min)/2 + margin, x_max + margin))
         ax.set_ylim(min(planet_y - (y_max-y_min)/2 - margin, y_min - margin),
                     max(planet_y + (y_max-y_min)/2 + margin, y_max + margin))
-        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot
+        # Calculate and display planet temperature
+        planet.position = np.array([xp_sol[frame-1], yp_sol[frame-1]])
+        sun1.position = np.array([x1_sol[frame-1], y1_sol[frame-1]])
+        sun2.position = np.array([x2_sol[frame-1], y2_sol[frame-1]])
+        sun3.position = np.array([x3_sol[frame-1], y3_sol[frame-1]])
+        temperature = planet.black_body_temperature([sun1, sun2, sun3])
+        temperature_text.set_text(f'Temperature: {temperature:.1f} K')
+        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot, temperature_text
 
     ani = FuncAnimation(fig, update, frames=len(t_eval), init_func=init, blit=True, interval=20, repeat=False)
     plt.show()
