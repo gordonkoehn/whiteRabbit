@@ -178,6 +178,132 @@ def get_orbital_frame(frame: int = 0, total_frames: int = 2000):
         "planet": {"x": float(xp_sol[idx]), "y": float(yp_sol[idx])}
     }
 
+def generate_orbital_gif(filename: str = "orbital_animation.gif", total_frames: int = 200):
+    """
+    Generate and save the orbital animation as a GIF file.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation, PillowWriter
+    m_sun = 1.989e30
+    m_earth = 15.972e29
+    AU = 1.496e11
+    sun1 = Sun("Sun1", m_sun, [0.0, 1.5*AU], [0.0, 0.0], orbit=Orbit([0.0, 2*AU], [0.0, 0.0]))
+    sun2 = Sun("Sun2", m_sun, [1.5*AU, -1.5*AU], [0.0, 15000.0], orbit=Orbit([1.5*AU, -1.5*AU], [0.0, 15000.0]))
+    sun3 = Sun("Sun3", m_sun, [-1.5*AU, -1.5*AU], [0.0, -15000.0], orbit=Orbit([-1.5*AU, -1.5*AU], [0.0, -15000.0]))
+    planet = Planet("Planet", m_earth, [0, 0.0], [20000, 20000.0])
+    solar_system = SolarSystem([sun1, sun2, sun3], planet)
+    t_span = (0, 9.154e7)
+    t_eval = np.linspace(t_span[0], t_span[1], total_frames)
+    sol = solar_system.integrate(t_span, t_eval)
+    x1_sol, y1_sol = sol.y[0], sol.y[1]
+    x2_sol, y2_sol = sol.y[2], sol.y[3]
+    x3_sol, y3_sol = sol.y[4], sol.y[5]
+    xp_sol, yp_sol = sol.y[6], sol.y[7]
+
+    fig, ax = plt.subplots(figsize=(8,8))
+    fig.patch.set_facecolor('black')
+    ax.set_facecolor('black')
+    ax.tick_params(colors='white')
+    ax.xaxis.label.set_color('white')
+    ax.yaxis.label.set_color('white')
+    ax.title.set_color('white')
+    ax.grid(True, color='gray', alpha=0.3)
+    ax.set_xlabel('x [m]')
+    ax.set_ylabel('y [m]')
+    ax.set_title('Three Suns + Planet (Gravitational)')
+    ax.axis('equal')
+    ax.set_xlim(np.min([x1_sol, x2_sol, x3_sol, xp_sol]), np.max([x1_sol, x2_sol, x3_sol, xp_sol]))
+    ax.set_ylim(np.min([y1_sol, y2_sol, y3_sol, yp_sol]), np.max([y1_sol, y2_sol, y3_sol, yp_sol]))
+
+    sun1_line, = ax.plot([], [], 'y-', label='Sun1')
+    sun2_line, = ax.plot([], [], 'b-', label='Sun2')
+    sun3_line, = ax.plot([], [], 'r-', label='Sun3')
+    planet_line, = ax.plot([], [], 'g-', label='Planet')
+    sun1_dot, = ax.plot([], [], 'o', markersize=10, label='Sun1 (visible)', color='orange')
+    sun2_dot, = ax.plot([], [], 'o', markersize=10, label='Sun2 (visible)', color='orange')
+    sun3_dot, = ax.plot([], [], 'o', markersize=10, label='Sun3 (visible)', color='orange')
+    planet_dot, = ax.plot([], [], 'go', markersize=8, label='Planet')
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], marker='o', color='w', label='Sun (visible)', markerfacecolor='orange', markersize=10),
+        Line2D([0], [0], marker='o', color='w', label='Sun (not visible)', markerfacecolor='#8B0000', markersize=10),
+        Line2D([0], [0], marker='o', color='w', label='Planet', markerfacecolor='lime', markersize=8)
+    ]
+    ax.legend(handles=legend_elements, loc='upper right', facecolor='black', edgecolor='white', labelcolor='white')
+    temperature_text = ax.text(0.02, 0.95, '', transform=ax.transAxes, color='white', fontsize=12, ha='left', va='top')
+
+    def init():
+        sun1_line.set_data([], [])
+        sun2_line.set_data([], [])
+        sun3_line.set_data([], [])
+        planet_line.set_data([], [])
+        sun1_dot.set_data([], [])
+        sun2_dot.set_data([], [])
+        sun3_dot.set_data([], [])
+        planet_dot.set_data([], [])
+        temperature_text.set_text('')
+        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot, temperature_text
+
+    def update(frame):
+        sun1_line.set_data(x1_sol[:frame], y1_sol[:frame])
+        sun2_line.set_data(x2_sol[:frame], y2_sol[:frame])
+        sun3_line.set_data(x3_sol[:frame], y3_sol[:frame])
+        planet_line.set_data(xp_sol[:frame], yp_sol[:frame])
+        planet_pos = np.array([xp_sol[frame-1], yp_sol[frame-1]])
+        sun1.orbit.position = np.array([x1_sol[frame-1], y1_sol[frame-1]])
+        sun2.orbit.position = np.array([x2_sol[frame-1], y2_sol[frame-1]])
+        sun3.orbit.position = np.array([x3_sol[frame-1], y3_sol[frame-1]])
+        sun1_dot.set_data([x1_sol[frame-1]], [y1_sol[frame-1]])
+        sun2_dot.set_data([x2_sol[frame-1]], [y2_sol[frame-1]])
+        sun3_dot.set_data([x3_sol[frame-1]], [y3_sol[frame-1]])
+        planet_dot.set_data([xp_sol[frame-1]], [yp_sol[frame-1]])
+        sun1_visible = sun1.is_visible(planet_pos)
+        sun2_visible = sun2.is_visible(planet_pos)
+        sun3_visible = sun3.is_visible(planet_pos)
+        sun1_dot.set_color('orange' if sun1_visible else '#8B0000')
+        sun2_dot.set_color('orange' if sun2_visible else '#8B0000')
+        sun3_dot.set_color('orange' if sun3_visible else '#8B0000')
+        planet_dot.set_color('lime')
+        objects_x = [x1_sol[frame-1], x2_sol[frame-1], x3_sol[frame-1], xp_sol[frame-1]]
+        objects_y = [y1_sol[frame-1], y2_sol[frame-1], y3_sol[frame-1], yp_sol[frame-1]]
+        planet_x = xp_sol[frame-1]
+        planet_y = yp_sol[frame-1]
+        margin = 0.1 * max(np.ptp(objects_x), np.ptp(objects_y), 1e7)
+        x_min = min(objects_x)
+        x_max = max(objects_x)
+        y_min = min(objects_y)
+        y_max = max(objects_y)
+        ax.set_xlim(min(planet_x - (x_max-x_min)/2 - margin, x_min - margin),
+                    max(planet_x + (x_max-x_min)/2 + margin, x_max + margin))
+        ax.set_ylim(min(planet_y - (y_max-y_min)/2 - margin, y_min - margin),
+                    max(planet_y + (y_max-y_min)/2 + margin, y_max + margin))
+        visible_suns = [sun for sun, vis in zip([sun1, sun2, sun3], [sun1_visible, sun2_visible, sun3_visible]) if vis]
+        n_visible = len(visible_suns)
+        planet.position = np.array([xp_sol[frame-1], yp_sol[frame-1]])
+        sun1.position = np.array([x1_sol[frame-1], y1_sol[frame-1]])
+        sun2.position = np.array([x2_sol[frame-1], y2_sol[frame-1]])
+        sun3.position = np.array([x3_sol[frame-1], y3_sol[frame-1]])
+        temperature = planet.black_body_temperature([sun1, sun2, sun3])
+        temperature_text.set_text(f'Temperature: {temperature:.1f} K\nVisible Suns: {n_visible}')
+        for artist in getattr(update, 'planet_artists', []):
+            artist.remove()
+        update.planet_artists = []
+        from matplotlib.patches import Wedge, Circle
+        r = 0.5e10
+        if n_visible > 0:
+            wedge = Wedge((planet_x, planet_y), r, 0, 180, facecolor='yellowgreen', edgecolor='lime', lw=1, zorder=5)
+            update.planet_artists.append(ax.add_patch(wedge))
+            circ = Wedge((planet_x, planet_y), r, 180, 360, facecolor='green', edgecolor='lime', lw=1, zorder=5)
+            update.planet_artists.append(ax.add_patch(circ))
+        else:
+            circ = Circle((planet_x, planet_y), r, facecolor='green', edgecolor='lime', lw=1, zorder=5)
+            update.planet_artists.append(ax.add_patch(circ))
+        return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot, temperature_text, *update.planet_artists
+
+    ani = FuncAnimation(fig, update, frames=total_frames, init_func=init, blit=True, interval=20, repeat=False)
+    ani.save(filename, writer=PillowWriter(fps=30))
+    plt.close(fig)
+
 def main():
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
