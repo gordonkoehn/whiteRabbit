@@ -142,6 +142,21 @@ def main():
         sun2_dot.set_data([x2_sol[frame-1]], [y2_sol[frame-1]])
         sun3_dot.set_data([x3_sol[frame-1]], [y3_sol[frame-1]])
         planet_dot.set_data([xp_sol[frame-1]], [yp_sol[frame-1]])
+        # Dynamically center on planet and keep all objects in frame
+        objects_x = [x1_sol[frame-1], x2_sol[frame-1], x3_sol[frame-1], xp_sol[frame-1]]
+        objects_y = [y1_sol[frame-1], y2_sol[frame-1], y3_sol[frame-1], yp_sol[frame-1]]
+        planet_x = xp_sol[frame-1]
+        planet_y = yp_sol[frame-1]
+        margin = 0.1 * max(np.ptp(objects_x), np.ptp(objects_y), 1e7)  # 10% margin, min margin
+        x_min = min(objects_x)
+        x_max = max(objects_x)
+        y_min = min(objects_y)
+        y_max = max(objects_y)
+        # Center on planet, but expand to fit all objects
+        ax.set_xlim(min(planet_x - (x_max-x_min)/2 - margin, x_min - margin),
+                    max(planet_x + (x_max-x_min)/2 + margin, x_max + margin))
+        ax.set_ylim(min(planet_y - (y_max-y_min)/2 - margin, y_min - margin),
+                    max(planet_y + (y_max-y_min)/2 + margin, y_max + margin))
         return sun1_line, sun2_line, sun3_line, planet_line, sun1_dot, sun2_dot, sun3_dot, planet_dot
 
     ani = FuncAnimation(fig, update, frames=len(t_eval), init_func=init, blit=True, interval=20, repeat=False)
