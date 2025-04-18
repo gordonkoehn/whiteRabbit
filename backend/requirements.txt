@@ -2,10 +2,10 @@ fastapi==0.115.0
 uvicorn==0.30.6
 gymnasium==0.29.1
 stable-baselines3==2.3.2
-# Use CPU-only version of PyTorch to reduce size
-torch==2.4.1 --extra-index-url https://download.pytorch.org/whl/cpu
 python-dotenv==1.0.1
 requests==2.32.3
 pytest==8.3.3
 python-multipart==0.0.6
 openai==1.12.0
+numpy==2.2.0
+scipy==1.15.2
